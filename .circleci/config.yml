@@ -19,6 +19,12 @@ jobs:
           - restore_cache:
               key: go-mod-v3-{{ checksum "go.sum" }}
           - run:
+              name: install tools
+              command: |
+                go clean -modcache
+                go mod tidy
+                go vet ./...
+          - run:
               name: Run tests
               command: |
                 make

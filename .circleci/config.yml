@@ -30,8 +30,10 @@ jobs:
         <<: *defaults
         steps:
             - checkout
-            - restore_cache:
-                key: go-mod-v3-{{ checksum "go.sum" }}
+            - run:
+                name: install tools
+                command: |
+                    go vet ./...
             - run:
                 name: Build binaries
                 command: |

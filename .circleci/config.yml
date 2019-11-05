@@ -6,62 +6,57 @@ version: 2.1
 orbs:
     core: ren/core@0.0.1
 
+_defaults: &defaults
+    docker:
+        - image: techknowlogick/xgo:latest
+
 jobs:
     build:
         docker:
-            - image: circleci/golang:1.12
+          - image: circleci/golang:1.12
         steps:
-            - checkout
-            - restore_cache:
-                key: go-mod-v3-{{ checksum "go.sum" }}
-            - run:
-                name: Run tests
-                command: |
-                    make
-            - save_cache:
-                key: go-mod-v3-{{ checksum "go.sum" }}
-                paths:
-                    - "~/go"
-
+          - checkout
+          - restore_cache:
+              key: go-mod-v3-{{ checksum "go.sum" }}
+          - run:
+              name: Run tests
+              command: |
+                make
+          - save_cache:
+              key: go-mod-v3-{{ checksum "go.sum" }}
+              paths:
+              - ~/go
     deploy:
-        docker:
-            - image: techknowlogick/xgo:latest
+        <<: *defaults
         steps:
             - checkout
             - restore_cache:
                 key: go-mod-v3-{{ checksum "go.sum" }}
-            - run:
-                name: Install GHR
-                command: |
-                    wget https://github.com/tcnksm/ghr/releases/download/v0.13.0/ghr_v0.13.0_linux_amd64.tar.gz
-                    tar xvzf ghr_v0.13.0_linux_amd64.tar.gz
-                    sudo mv ghr_v0.13.0_linux_amd64/ghr /usr/local/bin
             - run:
                 name: Build binaries
                 command: |
                     make
                     mv $(make target_name) ./artifacts/darknode_linux_amd64
-                    GOOS=linux CGO_ENABLED=1 CC=arm-linux-gnueabi-gcc-6 GOARCH=arm make
+                    env GOOS=linux CGO_ENABLED=1 CC=arm-linux-gnueabi-gcc-6 GOARCH=arm make
                     mv $(make target_name) ./artifacts/darknode_linux_arm
-                    GOOS=darwin CGO_ENABLED=1 CC=o64-clang GOARCH=amd64 make
+                    env GOOS=darwin CGO_ENABLED=1 CC=o64-clang GOARCH=amd64 make
                     mv $(make target_name) ./artifacts/darknode_darwin_amd64
-                    ls ./artifacts  # > files.txt
-#           - core/github_release:
-#               tag: $CIRCLE_TAG
-#               replace: true
-#               filelist: files.txt
+            - run:
+                name: Install ghr
+                command: |
+                    wget https://github.com/tcnksm/ghr/releases/download/v0.13.0/ghr_v0.13.0_linux_amd64.tar.gz
+                    tar xvzf ghr_v0.13.0_linux_amd64.tar.gz
+                    mv ghr_v0.13.0_linux_amd64/ghr ghr
+            - run:
+                name: Create release
+                command: |
+                    ./ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -delete $(cat ./VERSION) ./artifacts/
 
 workflows:
-  version: 2.1
-
-  build_release:
-    jobs:
-      - build
-      - deploy:
-          requires:
+    version: 2.1
+    build_release:
+        jobs:
             - build
-#         filters:
-#           tags:
-#             only: /^v.*/
-#           branches:
-#             ignore: /.*/
+            - deploy:
+                requires:
+                  - build

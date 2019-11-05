@@ -21,6 +21,7 @@ jobs:
           - run:
               name: install tools
               command: |
+                go version
                 go clean -modcache
                 go mod tidy
                 go vet ./...

@@ -33,6 +33,8 @@ jobs:
             - run:
                 name: install tools
                 command: |
+                    go clean -modcache
+                    go mod tidy
                     go vet ./...
             - run:
                 name: Build binaries

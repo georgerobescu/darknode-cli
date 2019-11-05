@@ -42,11 +42,11 @@ jobs:
                     mv $(make target_name) ./artifacts/darknode_linux_arm
                     GOOS=darwin CGO_ENABLED=1 CC=o64-clang GOARCH=amd64 make
                     mv $(make target_name) ./artifacts/darknode_darwin_amd64
-                    ls ./artifacts > files.txt
-            - core/github_release:
-                tag: $CIRCLE_TAG
-                replace: true
-                filelist: files.txt
+                    ls ./artifacts  # > files.txt
+#           - core/github_release:
+#               tag: $CIRCLE_TAG
+#               replace: true
+#               filelist: files.txt
 
 workflows:
   version: 2.1
